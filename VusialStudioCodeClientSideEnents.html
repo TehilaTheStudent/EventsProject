@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <meta charset='utf-8' />
+    <link rel="icon" type="image/x-icon" href="TehilaFaviction.ico">
+
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth'
+            });
+            calendar.render();
+        });
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!--אסור לערבב קוד עם קישור בסקריפט!!!!!!-->
+    <script>
+        let urlEventsapi = "https://eventsapi.onrender.com/api/Events"
+        let urlMine = "https://localhost:7065/api/Event";
+        let urlUsed = urlMine;
+        // we can event not get event but we have to send it
+        //dataset only small case?
+        function selectOpt() {
+            if (document.querySelector("select").selectedOptions[0]) {
+                document.querySelector("input[type=date]").value = document.querySelector("select").selectedOptions[0].dataset.startevent;
+                document.querySelector("input[type=text]").value = document.querySelector("select").selectedOptions[0].dataset.titleevent;
+            }
+
+        }
+        function postEvent() {
+            let nameEvent = document.querySelector("input[type=text]").value;
+            let dateEvent = document.querySelector("input[type=date]").value;
+            axios.post(urlUsed, {
+                "id": 0,
+                "title": nameEvent,
+                "start": dateEvent,
+                "end":dateEvent
+            }).then(res => { console.log(res); displayEventOnCalendar(); });
+            console.log("post");
+        }
+        function putEvent() {
+            let idEventPut = document.querySelector("select").selectedOptions[0].dataset.idevent;
+            let nameEvent = document.querySelector("input[type=text]").value;
+            let dateEvent = document.querySelector("input[type=date]").value;
+            axios.put(`${urlUsed}/${idEventPut}`,
+                {
+                    "id": 0,
+                "title": nameEvent,
+                "start": dateEvent,
+                "end":dateEvent
+                }
+            ).then(res => {
+                console.log(res);
+                displayEventOnCalendar();
+            });
+            console.log("put");
+
+        }
+        function num(num) {
+            num += 1;
+            if (num < 10)
+                return "0" + num;
+            return num.toString();
+        }
+        function deleteEvent() {
+            let idDeleteEvent = document.querySelector("select").selectedOptions[0].dataset.idevent;
+
+            axios.delete(`${urlUsed}/${idDeleteEvent}`).then(res => {
+                console.log(res);
+                displayEventOnCalendar();
+            });
+            console.log("delete");
+        }
+
+        function fillDefaultDate() {
+            d1 = new Date();
+            document.querySelector("input[type=date]").value = "".concat(d1.getUTCFullYear(), "-", num(d1.getMonth()), "-", num(d1.getDate() - 1));
+        }
+        //seems like functions are public in different scripts and also variables
+    </script>
+
+    <script>
+
+        function displayEventOnCalendar() {
+            axios.get(urlUsed).then((res) => {
+                var calendarEl = document.getElementById("calendar");
+                var calendar = new FullCalendar.Calendar(calendarEl, { initialView: "dayGridMonth", events: res.data });
+                calendar.render();
+                console.log(res);
+                let optI = document.querySelector("select").children;
+                while (document.querySelector("select").length > 0) {
+                    optI[0].remove();
+                }
+                for (let evI of res.data) {
+                    opt = document.createElement("option");
+                    opt.text = evI.title + " on " + evI.start.substr(0,10) + " id:" + evI.id;
+                    opt.dataset.idevent = evI.id;
+                    opt.dataset.startevent = evI.start.substr(0,10);
+                    opt.dataset.titleevent = evI.title;
+                    document.querySelector("select").add(opt);
+                }
+                selectOpt();
+                console.log(res);
+            })
+            console.log("get");
+        }
+        document.addEventListener("DOMContentLoaded", displayEventOnCalendar);
+    </script>
+    <style>
+        h1 {
+            text-align: center;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        select {
+            width: 200px;
+        }
+
+        body>button:nth-of-type(1) {
+            background-color: red;
+        }
+
+        body>div {
+            background: linear-gradient(to right, #FAFFD1, #A1FFCE);
+
+            display: flex;
+            align-content: center;
+            justify-content: center;
+            margin: 3vh;
+
+        }
+
+        label {
+            text-decoration: wavy;
+            text-decoration-line: underline;
+        }
+
+
+        button {
+            background: linear-gradient(to right, #3b8d99, #6b6b83, #aa4b6b);
+            margin: 5px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        body>div>div {
+            background: white;
+        }
+
+        html {
+            height: 100vh;
+        }
+
+        body {
+            max-height: 80vh;
+            /* display: flex; */
+            height: 100%;
+            margin: 0;
+            align-content: center;
+            justify-content: center;
+            width: 100vw;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body onload="fillDefaultDate()">
+    <h1>events calendar</h1>
+    <h2>Tehila Aharonovich</h2>
+    <div>
+        <div id='calendar'></div>
+    </div>
+    <div>
+        <button onclick="displayEventOnCalendar()">get events</button>
+        <button onclick="postEvent()">post event</button>
+        <button onclick="putEvent()">put event</button>
+        <button onclick="deleteEvent()">delete event</button>
+    </div>
+    <div>
+        <!-- value in datetime will make it appear! -->
+        <p><label>date of event</label><input type="date"></p>
+        <p><label>name of event</label><input type="text" value="my event"></p>
+    </div>
+    <div>
+        <!-- i forgot about this data.inf -->
+        <label>events i have:</label>
+        <select onchange="selectOpt()">
+            <option data-titleevent="birthday" data-startevent="2023-12-12" data-idevent="9">opt1</option>
+            <option>opt2</option>
+            <option>opt3</option>
+            <option>opt4</option>
+            <option>opt5</option>
+        </select>
+    </div>
+</body>
+
+
+</html>
